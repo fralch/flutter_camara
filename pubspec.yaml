@@ -40,6 +40,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   image_picker:
   http:
+  dio:
+  logger:
 
 dev_dependencies:
   flutter_test:
