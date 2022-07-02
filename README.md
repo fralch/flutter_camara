@@ -1,4 +1,4 @@
-# hello_world
+# Camara Flutter
 
 A new Flutter project.
 
