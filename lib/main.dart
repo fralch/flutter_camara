@@ -3,10 +3,9 @@
 import 'dart:async';
 import 'dart:io';
 import "dart:convert";
-import 'package:dio/dio.dart';
 import "package:http/http.dart" as http;
-import "package:image_picker/image_picker.dart";
 import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show basename, join;
 import 'package:path_provider/path_provider.dart';
@@ -98,74 +97,44 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-Future<String?> _enviarForm(imagen64) async {
-  var data = {'dato': 'imagen de prueba', 'img64': imagen64};
-  var respuesta = await Api()
-      .postDataImagen(data, "http://192.168.1.15:3000/subiendo_imagen");
-  // var contenido = json.decode(respuesta.body);
-  // if (contenido['success']) {
-  //   print(contenido['mensaje']);
-  // } else {
-  //   print(contenido['mensaje']);
-  // }
-  print(respuesta);
-  // return respuesta;
-}
-
-class Api {
-  final String dominio = "";
-  postDataImagen(_data, _url) async {
-    return await http.post(Uri.http('192.168.1.15:3000', '/subiendo_imagen'),
-        body: jsonEncode(_data),
-        headers: {
-          'Content-type': 'application/json',
-          'Accept': 'application/json',
-          'Charset': 'utf-8'
-        });
-  }
-}
-
 // PAGINA DONDE SE MUESTRA LA IMAGEN
 class ViewImagenScreen extends StatelessWidget {
   final String imagenPath;
   final List<int> archivo;
   final File foto;
-  final String endPoint = 'http://192.168.1.15:3000/storage';
 
   const ViewImagenScreen(
       {super.key,
       required this.imagenPath,
       required this.archivo,
       required this.foto});
-
   // @override
-  Future<String?> uploadImage(filename) async {
-    var request = http.MultipartRequest(
-        'POST', Uri.parse('http://192.168.1.15:3000/storage'));
-    request.files.add(await http.MultipartFile.fromPath('file', filename));
-    var res = await request.send();
-    // return res.reasonPhrase;
+
+  //mandar post a la api
+  Future<void> _enviarForm(File image) async {
+    try {
+      var image64 = await _convertImageToBase64(image);
+      var url = Uri.parse('http://192.168.1.15/cre/cli/subir_imagen');
+      final response = await http.post(url,
+          body: json.encode({
+            "file": image64,
+            "upload_preset": "qzqxqjqe",
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Charset': 'utf-8',
+          });
+      print(response.body);
+    } catch (e) {
+      print(e);
+    }
   }
 
-  Future<String?> _upload(File file) async {
-    String fileName = file.path.split('/').last;
-    print(fileName);
-
-    List<int> imgbytes = await new File(file.path).readAsBytesSync();
-
-    FormData data = FormData.fromMap({
-      "file": await MultipartFile.fromFile(
-        file.path,
-        filename: fileName,
-      ),
-    });
-
-    Dio dio = new Dio();
-
-    dio.post(endPoint, data: imgbytes).then((response) {
-      var jsonResponse = jsonDecode(response.toString());
-      ;
-    }).catchError((error) => print(error));
+  Future<String> _convertImageToBase64(File image) async {
+    final bytes = await image.readAsBytes();
+    final base64Image = base64Encode(bytes);
+    return base64Image;
   }
 
   showAlertDialog(BuildContext context) {
@@ -201,15 +170,9 @@ class ViewImagenScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
-          //-----
-          // await _enviarForm(archivo);
-          // await _upload(foto);
-          await uploadImage(imagenPath);
+          // await uploadImage(imagenPath);
+          await _enviarForm(foto);
           print('guardado');
-          // var res = await uploadImage(
-          //     File(file.path), "192.168.1.15/cre/cli/subir_imagen");
-          // var res = await showAlertDialog(context);
-          // print(res);
         },
       ),
     );
